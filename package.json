@@ -33,12 +33,12 @@
   "author": "Pichael Thompson",
   "license": "MIT",
   "devDependencies": {
-    "eslint": "^8.0.0",
-    "eslint-vitest-rule-tester": "^0.5.0",
+    "eslint": "^9.28.0",
+    "eslint-vitest-rule-tester": "^2.2.0",
     "vitest": "^1.0.0",
     "bun": "^1.0.0",
     "prettier": "^3.0.0",
-    "eslint-config-prettier": "^9.0.0"
+    "eslint-config-prettier": "^10.1.5"
   },
   "peerDependencies": {
     "eslint": ">=8.0.0"
