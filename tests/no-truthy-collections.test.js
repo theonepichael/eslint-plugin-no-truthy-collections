@@ -960,4 +960,92 @@ describe('no-truthy-collections ESLint Rule', () => {
       expect(typeof rule.meta).toBe('object');
     });
   });
+
+  describe('Parameterized Boolean Contexts', () => {
+    const { invalid } = createRuleTester({
+      name: 'param-boolean-contexts',
+      rule,
+      configs: baseConfig,
+    });
+
+    const booleanCases = [
+      // Array
+      {
+        code: 'if ([]) { foo() }',
+        errors: [{ messageId: 'arrayTruthy' }],
+        output: 'if ([].length > 0) { foo() }',
+      },
+      {
+        code: 'while ([]) { bar() }',
+        errors: [{ messageId: 'arrayTruthy' }],
+        output: 'while ([].length > 0) { bar() }',
+      },
+      // Object
+      {
+        code: 'if ({}) { foo() }',
+        errors: [{ messageId: 'objectTruthy' }],
+        output: 'if (Object.keys({}).length > 0) { foo() }',
+      },
+      {
+        code: 'while ({}) { bar() }',
+        errors: [{ messageId: 'objectTruthy' }],
+        output: 'while (Object.keys({}).length > 0) { bar() }',
+      },
+      // Array-like
+      {
+        code: 'if (new Set()) { foo() }',
+        errors: [{ messageId: 'arrayLikeTruthy' }],
+        output: 'if (new Set().size > 0) { foo() }',
+      },
+      {
+        code: 'while (new Map()) { bar() }',
+        errors: [{ messageId: 'arrayLikeTruthy' }],
+        output: 'while (new Map().size > 0) { bar() }',
+      },
+    ];
+
+    it.each(booleanCases)('$code', async ({ code, errors, output }) => {
+      const result = await invalid({ code, errors });
+      expect(result.output).toBe(output);
+    });
+  });
+
+  describe('Additional Edge Cases', () => {
+    const { valid, invalid } = createRuleTester({
+      name: 'edge-cases-extra',
+      rule,
+      configs: baseConfig,
+    });
+
+    it('handles destructuring with spread for arrays', async () => {
+      await valid('const [first, ...rest] = arr; if (rest) { foo() }');
+    });
+    it('handles destructuring with spread for objects', async () => {
+      await valid('const { a, ...others } = obj; if (others) { bar() }');
+    });
+    it('handles deeply nested logical expressions', async () => {
+      await invalid({
+        code: 'if ((([] && {}) || new Set())) { foo() }',
+        errors: [
+          { messageId: 'arrayInLogical' },
+          { messageId: 'objectInLogical' },
+          { messageId: 'arrayLikeTruthy' },
+        ],
+      });
+    });
+    it('handles arrays with comments inside', async () => {
+      const result = await invalid({
+        code: 'if ([/*empty*/]) { foo() }',
+        errors: [{ messageId: 'arrayTruthy' }],
+      });
+      expect(result.output).toContain('[/*empty*/].length > 0');
+    });
+    it('handles objects with comments inside', async () => {
+      const result = await invalid({
+        code: 'if ({ /*empty*/ }) { bar() }',
+        errors: [{ messageId: 'objectTruthy' }],
+      });
+      expect(result.output).toContain('Object.keys({ /*empty*/ }).length > 0');
+    });
+  });
 });
