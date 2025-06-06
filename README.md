@@ -12,17 +12,20 @@ Prevents dangerous boolean coercion of arrays and objects in JavaScript and Type
 
 ```javascript
 // Arrays are always truthy, even when empty!
-if (items) {          // 🐛 Always true, even for []
+if (items) {
+  // 🐛 Always true, even for []
   render(items);
 }
 
-// Objects are always truthy, even when empty!  
-if (config) {         // 🐛 Always true, even for {}
+// Objects are always truthy, even when empty!
+if (config) {
+  // 🐛 Always true, even for {}
   applyConfig(config);
 }
 
 // Array-like objects too!
-if (new Set()) {      // 🐛 Always true, even when empty
+if (new Set()) {
+  // 🐛 Always true, even when empty
   processSet();
 }
 ```
@@ -61,7 +64,7 @@ function processItems(items: string[]) {
   }
 }
 
-// Interface types  
+// Interface types
 interface Config {
   settings: Record<string, any>;
 }
@@ -111,7 +114,7 @@ export default [
 ### TypeScript Projects (Recommended)
 
 ```javascript
-// eslint.config.js  
+// eslint.config.js
 import noTruthyCollections from 'eslint-plugin-no-truthy-collections';
 import tsParser from '@typescript-eslint/parser';
 
@@ -121,7 +124,7 @@ export default [
     languageOptions: {
       parser: tsParser,
       parserOptions: {
-        project: './tsconfig.json',  // Enables enhanced type detection
+        project: './tsconfig.json', // Enables enhanced type detection
       },
     },
     plugins: {
@@ -139,7 +142,7 @@ export default [
 ### Using Preset Configurations
 
 ```javascript
-// eslint.config.js  
+// eslint.config.js
 import noTruthyCollections from 'eslint-plugin-no-truthy-collections';
 
 export default [
@@ -148,7 +151,7 @@ export default [
     plugins: { 'no-truthy-collections': noTruthyCollections },
     ...noTruthyCollections.configs.recommended,
   },
-  
+
   // Or strict preset (includes naming checks)
   {
     plugins: { 'no-truthy-collections': noTruthyCollections },
@@ -163,7 +166,7 @@ export default [
 {
   'no-truthy-collections/no-truthy-collections': ['error', {
     checkArrays: true,           // Check array literals and constructors
-    checkObjects: true,          // Check object literals and constructors  
+    checkObjects: true,          // Check object literals and constructors
     checkArrayLike: true,        // Check Set, Map, etc.
     strictNaming: false,         // Check variable names for collection hints
     allowExplicitBoolean: true,  // Allow Boolean() and !! coercion
@@ -173,13 +176,13 @@ export default [
 
 ### Option Details
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `checkArrays` | `true` | Detect arrays in boolean contexts |
-| `checkObjects` | `true` | Detect objects in boolean contexts |
-| `checkArrayLike` | `true` | Detect Set, Map, etc. in boolean contexts |
-| `strictNaming` | `false` | Use variable names to detect collections |
-| `allowExplicitBoolean` | `true` | Allow `Boolean(array)` and `!!array` |
+| Option                 | Default | Description                               |
+| ---------------------- | ------- | ----------------------------------------- |
+| `checkArrays`          | `true`  | Detect arrays in boolean contexts         |
+| `checkObjects`         | `true`  | Detect objects in boolean contexts        |
+| `checkArrayLike`       | `true`  | Detect Set, Map, etc. in boolean contexts |
+| `strictNaming`         | `false` | Use variable names to detect collections  |
+| `allowExplicitBoolean` | `true`  | Allow `Boolean(array)` and `!!array`      |
 
 ## Examples
 
@@ -187,15 +190,21 @@ export default [
 
 ```javascript
 // ❌ Will be flagged
-if ([]) { }                    // Always true
-if ({}) { }                    // Always true  
-if (new Set()) { }             // Always true
+if ([]) {
+} // Always true
+if ({}) {
+} // Always true
+if (new Set()) {
+} // Always true
 arr.filter(x => x) && process(); // Always true
 
 // ✅ Auto-fixed to
-if ([].length > 0) { }
-if (Object.keys({}).length > 0) { }
-if (new Set().size > 0) { } 
+if ([].length > 0) {
+}
+if (Object.keys({}).length > 0) {
+}
+if (new Set().size > 0) {
+}
 arr.filter(x => x).length > 0 && process();
 ```
 
@@ -204,26 +213,30 @@ arr.filter(x => x).length > 0 && process();
 ```typescript
 // ❌ Enhanced detection with TypeScript
 function processUsers(users: User[]) {
-  if (users) {                 // 🚨 Detected via type information
+  if (users) {
+    // 🚨 Detected via type information
     return users.filter(u => u.active);
   }
 }
 
 type Config = Record<string, any>;
 const config: Config = {};
-if (config) {                  // 🚨 Detected via type alias
+if (config) {
+  // 🚨 Detected via type alias
   loadConfig(config);
 }
 
 // ✅ Proper TypeScript patterns
 function processUsers(users: User[]) {
-  if (users.length > 0) {      // ✅ Explicit length check
+  if (users.length > 0) {
+    // ✅ Explicit length check
     return users.filter(u => u.active);
   }
 }
 
 function loadUserConfig(config: Config | null) {
-  if (config && Object.keys(config).length > 0) {  // ✅ Null check + size check
+  if (config && Object.keys(config).length > 0) {
+    // ✅ Null check + size check
     loadConfig(config);
   }
 }
@@ -233,13 +246,14 @@ function loadUserConfig(config: Config | null) {
 
 ```javascript
 // ❌ Suspicious pattern detected
-if (new Set([item])) {         // Always has size 1!
+if (new Set([item])) {
+  // Always has size 1!
   process();
 }
 
 // 💡 Helpful suggestions:
 // 1. Check the element: if (item)
-// 2. Check from element: new Set(item).size > 0  
+// 2. Check from element: new Set(item).size > 0
 // 3. Check size: new Set([item]).size > 0
 ```
 
@@ -249,14 +263,20 @@ if (new Set([item])) {         // Always has size 1!
 // With strictNaming: true
 
 // ❌ Will be flagged based on variable names
-if (itemsArray) { }            // Naming suggests array
-if (configObject) { }          // Naming suggests object
-if (userList) { }              // Naming suggests array
+if (itemsArray) {
+} // Naming suggests array
+if (configObject) {
+} // Naming suggests object
+if (userList) {
+} // Naming suggests array
 
 // ✅ Better patterns
-if (itemsArray.length > 0) { }
-if (Object.keys(configObject).length > 0) { }
-if (userList.length > 0) { }
+if (itemsArray.length > 0) {
+}
+if (Object.keys(configObject).length > 0) {
+}
+if (userList.length > 0) {
+}
 ```
 
 ## Why This Rule Matters
@@ -265,21 +285,23 @@ JavaScript's truthy behavior with collections causes subtle bugs:
 
 ```javascript
 function processItems(items = []) {
-  if (items) {               // 🐛 BUG: Always true!
+  if (items) {
+    // 🐛 BUG: Always true!
     return items.map(x => x * 2);
   }
   return [];
 }
 
 // This fails silently:
-processItems([]);            // Returns [] but we expected it to work
+processItems([]); // Returns [] but we expected it to work
 ```
 
 TypeScript doesn't prevent this either:
 
 ```typescript
 function processItems(items: number[] = []) {
-  if (items) {               // 🐛 BUG: TypeScript allows this!
+  if (items) {
+    // 🐛 BUG: TypeScript allows this!
     return items.map(x => x * 2);
   }
   return [];
@@ -318,7 +340,7 @@ bun test
 # Format code
 bun run format
 
-# Lint code  
+# Lint code
 bun run lint
 
 # Format + lint in one command

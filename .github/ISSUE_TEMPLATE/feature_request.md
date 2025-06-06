@@ -7,12 +7,15 @@ assignees: ''
 ---
 
 ## Feature Description
+
 A clear and concise description of what you want to happen.
 
 ## Problem Statement
+
 What problem does this feature solve?
 
 ## Proposed Solution
+
 ```javascript
 // Example of how the feature might work
 {
@@ -25,7 +28,9 @@ What problem does this feature solve?
 ```
 
 ## Use Case
+
 Describe your use case and how this feature would help.
 
 ## Additional Context
+
 Add any other context about the feature request here.

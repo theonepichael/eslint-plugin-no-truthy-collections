@@ -905,7 +905,6 @@ describe('no-truthy-collections ESLint Rule', () => {
       configs: baseConfig,
     });
 
-
     it('handles deeply nested structures without stack overflow', async () => {
       // Create deeply nested parentheses around array literal
       const nestedParens = '('.repeat(20) + '[]' + ')'.repeat(20);

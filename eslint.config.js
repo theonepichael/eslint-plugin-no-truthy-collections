@@ -27,30 +27,25 @@ export default [
     rules: {
       // Basic ESLint rules for clean code
       'no-unused-vars': 'error',
-      'no-console': 'off',  // Allow console in our rule
+      'no-console': 'off', // Allow console in our rule
       'prefer-const': 'error',
       'no-var': 'error',
-      
+
       // Import/export rules
       'no-duplicate-imports': 'error',
-      
+
       // Potential issues
       'no-unused-expressions': 'error',
       'no-unreachable': 'error',
-      'eqeqeq': 'error',
-      
+      eqeqeq: 'error',
+
       // Let Prettier handle formatting
       ...prettierConfig.rules,
     },
   },
-  
+
   // Ignore generated/build files
   {
-    ignores: [
-      'node_modules/**',
-      'dist/**',
-      'coverage/**',
-      '*.min.js',
-    ],
+    ignores: ['node_modules/**', 'dist/**', 'coverage/**', '*.min.js'],
   },
 ];
