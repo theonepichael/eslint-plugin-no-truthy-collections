@@ -33,12 +33,6 @@ export default [
     },
   },
 
-  // Alternative: Use preset configurations
-  {
-    files: ['**/*.{js,ts,tsx}'],
-    ...noTruthyCollections.configs.recommended,
-  },
-
   // Example: Different config for test files
   {
     files: ['**/*.test.{js,ts}', '**/*.spec.{js,ts}'],
@@ -84,11 +78,5 @@ export default [
         },
       ],
     },
-  },
-
-  // TypeScript-specific preset (includes parser setup)
-  {
-    files: ['**/*.{ts,tsx}'],
-    ...noTruthyCollections.configs.typescript,
   },
 ];
