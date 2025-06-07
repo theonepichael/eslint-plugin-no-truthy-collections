@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-no-truthy-collections",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "ESLint plugin that prevents dangerous boolean coercion of arrays and objects in JavaScript and TypeScript",
   "type": "module",
   "main": "lib/index.js",
