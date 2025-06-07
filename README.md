@@ -49,39 +49,68 @@ if (mySet.size > 0) {
 }
 ```
 
-## TypeScript Support ⚡
+## Detection Methods
 
-Enhanced detection when using TypeScript with type information:
+The rule uses multiple detection methods to identify collections in boolean contexts:
 
-```typescript
-// Standard detection (works in JS too)
-if ([]) { }                    // 🚨 Always flagged
+### 1. Literal Detection (Highest Confidence)
 
-// Enhanced TypeScript detection via type information
-function processItems(items: string[]) {
-  if (items) { }               // 🚨 Detected via TypeScript types
-    return items.map(x => x.toUpperCase());
-  }
-}
-
-// Interface types
-interface Config {
-  settings: Record<string, any>;
-}
-const config: Config = { settings: {} };
-if (config.settings) { }      // 🚨 Detected via TypeScript types
-
-// Generic constraints
-function check<T extends any[]>(arr: T) {
-  if (arr) { }                 // 🚨 Enhanced detection with generics
-    return arr.length;
-  }
-}
-
-// Union types (smart handling)
-let items: string[] | null = [];
-if (items) { }                 // ✅ Valid null check (not flagged)
+```javascript
+if ([]) {
+} // 🚨 Array literal
+if ({}) {
+} // 🚨 Object literal
 ```
+
+### 2. Constructor Detection
+
+```javascript
+if (new Array()) {
+} // 🚨 Array constructor
+if (new Object()) {
+} // 🚨 Object constructor
+if (new Set()) {
+} // 🚨 Set constructor
+if (Array.from([])) {
+} // 🚨 Array static methods
+if (Object.assign({})) {
+} // 🚨 Object static methods
+```
+
+### 3. Method Chain Detection
+
+```javascript
+if (arr.map(x => x)) {
+} // 🚨 Array methods that return arrays
+if (arr.filter(fn)) {
+} // 🚨 Methods: map, filter, slice, etc.
+```
+
+### 4. Naming Heuristics (Optional)
+
+When `strictNaming: true` is enabled:
+
+```javascript
+// Array-like names
+if (itemsArray) {
+} // 🚨 Ends with 'Array'
+if (userList) {
+} // 🚨 Ends with 'List'
+if (dataCollection) {
+} // 🚨 Ends with 'Collection'
+
+// Object-like names
+if (configObject) {
+} // 🚨 Ends with 'Object'
+if (userOptions) {
+} // 🚨 Ends with 'Options'
+if (settingsMap) {
+} // 🚨 Ends with 'Map'
+```
+
+## TypeScript Support
+
+The rule provides basic TypeScript support and works well with TypeScript projects, though it primarily relies on AST analysis rather than full type information.
 
 ## Installation
 
@@ -111,7 +140,7 @@ export default [
 ];
 ```
 
-### TypeScript Projects (Recommended)
+### TypeScript Projects
 
 ```javascript
 // eslint.config.js
@@ -123,9 +152,6 @@ export default [
     files: ['**/*.{js,ts,tsx}'],
     languageOptions: {
       parser: tsParser,
-      parserOptions: {
-        project: './tsconfig.json', // Enables enhanced type detection
-      },
     },
     plugins: {
       'no-truthy-collections': noTruthyCollections,
@@ -133,29 +159,6 @@ export default [
     rules: {
       'no-truthy-collections/no-truthy-collections': 'error',
     },
-  },
-];
-```
-
-> 💡 **See [`eslint.config.typescript.example.js`](./eslint.config.typescript.example.js) for a complete TypeScript setup example**
-
-### Using Preset Configurations
-
-```javascript
-// eslint.config.js
-import noTruthyCollections from 'eslint-plugin-no-truthy-collections';
-
-export default [
-  // Recommended preset
-  {
-    plugins: { 'no-truthy-collections': noTruthyCollections },
-    ...noTruthyCollections.configs.recommended,
-  },
-
-  // Or strict preset (includes naming checks)
-  {
-    plugins: { 'no-truthy-collections': noTruthyCollections },
-    ...noTruthyCollections.configs.strict,
   },
 ];
 ```
@@ -208,53 +211,36 @@ if (new Set().size > 0) {
 arr.filter(x => x).length > 0 && process();
 ```
 
-### TypeScript Enhanced Detection
-
-```typescript
-// ❌ Enhanced detection with TypeScript
-function processUsers(users: User[]) {
-  if (users) {
-    // 🚨 Detected via type information
-    return users.filter(u => u.active);
-  }
-}
-
-type Config = Record<string, any>;
-const config: Config = {};
-if (config) {
-  // 🚨 Detected via type alias
-  loadConfig(config);
-}
-
-// ✅ Proper TypeScript patterns
-function processUsers(users: User[]) {
-  if (users.length > 0) {
-    // ✅ Explicit length check
-    return users.filter(u => u.active);
-  }
-}
-
-function loadUserConfig(config: Config | null) {
-  if (config && Object.keys(config).length > 0) {
-    // ✅ Null check + size check
-    loadConfig(config);
-  }
-}
-```
-
-### Smart Suggestions
+### Smart Set/Map Detection
 
 ```javascript
-// ❌ Suspicious pattern detected
-if (new Set([item])) {
-  // Always has size 1!
-  process();
-}
+// ❌ Empty constructors flagged
+if (new Set()) {
+} // 🚨 Always true
+if (new Map()) {
+} // 🚨 Always true
 
-// 💡 Helpful suggestions:
-// 1. Check the element: if (item)
-// 2. Check from element: new Set(item).size > 0
-// 3. Check size: new Set([item]).size > 0
+// ❌ Suspicious single-element pattern
+if (new Set([item])) {
+} // 🚨 Always size 1!
+
+// ✅ Normal usage allowed
+if (new Set(items)) {
+} // ✅ Valid - checking variable
+if (new Set([x, y])) {
+} // ✅ Valid - multiple elements
+```
+
+### Logical Expression Detection
+
+```javascript
+// ❌ In logical expressions
+const result = [] && process(); // 🚨 Left side always truthy
+const value = {} || fallback(); // 🚨 Left side always truthy
+
+// ✅ Auto-fixed to
+const result = [].length > 0 && process();
+const value = Object.keys({}).length > 0 || fallback();
 ```
 
 ### Strict Naming Mode
@@ -269,6 +255,8 @@ if (configObject) {
 } // Naming suggests object
 if (userList) {
 } // Naming suggests array
+if (settingsMap) {
+} // Naming suggests object
 
 // ✅ Better patterns
 if (itemsArray.length > 0) {
@@ -277,6 +265,24 @@ if (Object.keys(configObject).length > 0) {
 }
 if (userList.length > 0) {
 }
+if (Object.keys(settingsMap).length > 0) {
+}
+```
+
+### Explicit Boolean Coercion (Allowed by Default)
+
+```javascript
+// ✅ These are allowed when allowExplicitBoolean: true
+if (Boolean(array)) {
+} // Explicit coercion
+if (!!array) {
+} // Double negation
+const bool = Boolean(object); // Explicit boolean conversion
+
+// ❌ These are still flagged
+if (array) {
+} // Implicit coercion
+while (object) {} // Implicit coercion
 ```
 
 ## Why This Rule Matters
@@ -286,7 +292,7 @@ JavaScript's truthy behavior with collections causes subtle bugs:
 ```javascript
 function processItems(items = []) {
   if (items) {
-    // 🐛 BUG: Always true!
+    // 🐛 BUG: Always true, even for empty array!
     return items.map(x => x * 2);
   }
   return [];
@@ -296,34 +302,132 @@ function processItems(items = []) {
 processItems([]); // Returns [] but we expected it to work
 ```
 
-TypeScript doesn't prevent this either:
+Common real-world scenarios:
 
-```typescript
-function processItems(items: number[] = []) {
-  if (items) {
-    // 🐛 BUG: TypeScript allows this!
-    return items.map(x => x * 2);
+```javascript
+// ❌ React component bug
+function UserList({ users = [] }) {
+  return (
+    <div>
+      {users && <h2>Users Found</h2>} {/* Always shows! */}
+      {users.map(user => (
+        <User key={user.id} {...user} />
+      ))}
+    </div>
+  );
+}
+
+// ❌ API response handling bug
+function processApiResponse(response = {}) {
+  if (response) {
+    // Always true!
+    return response.data || [];
+  }
+  return [];
+}
+
+// ✅ Correct patterns
+function UserList({ users = [] }) {
+  return (
+    <div>
+      {users.length > 0 && <h2>Users Found</h2>}
+      {users.map(user => (
+        <User key={user.id} {...user} />
+      ))}
+    </div>
+  );
+}
+
+function processApiResponse(response = {}) {
+  if (Object.keys(response).length > 0) {
+    return response.data || [];
   }
   return [];
 }
 ```
 
-This rule catches these issues early and suggests proper fixes.
+## Boolean Contexts Detected
+
+The rule checks these boolean contexts:
+
+- `if` statements: `if (array) { }`
+- `while` loops: `while (object) { }`
+- `do-while` loops: `do { } while (array)`
+- `for` loops: `for (;;array;) { }`
+- Ternary operators: `array ? a : b`
+- Logical expressions: `array && fn()`, `object || fallback`
+- Negation: `!array`
+
+## Special Pattern Detection
+
+### Suspicious Set/Map Patterns
+
+```javascript
+// ❌ Detected as suspicious (always size 1)
+if (new Set([item])) {
+}
+
+// 💡 Suggestions provided:
+// 1. Check element directly: if (item)
+// 2. Create Set from element: new Set(item).size > 0
+// 3. Check size: new Set([item]).size > 0
+```
+
+### Method Chaining
+
+```javascript
+// ❌ Array methods that return arrays
+if (items.map(fn)) {
+} // Always truthy
+if (data.filter(pred)) {
+} // Always truthy
+if (arr.slice(0, 5)) {
+} // Always truthy
+
+// ✅ Auto-fixed to
+if (items.map(fn).length > 0) {
+}
+if (data.filter(pred).length > 0) {
+}
+if (arr.slice(0, 5).length > 0) {
+}
+```
+
+## Auto-fixes and Suggestions
+
+The rule provides automatic fixes and multiple suggestions:
+
+### Array Collections
+
+- **Fix**: `array` → `array.length > 0`
+- **Suggestion 1**: Safe check with `.length > 0`
+- **Suggestion 2**: Explicit boolean with `Boolean(array)`
+
+### Object Collections
+
+- **Fix**: `object` → `Object.keys(object).length > 0`
+- **Suggestion 1**: Safe check with `Object.keys().length > 0`
+- **Suggestion 2**: Explicit boolean with `Boolean(object)`
+
+### Array-like Collections
+
+- **Fix**: `set` → `set.size > 0`
+- **Suggestion**: Safe check with `.size > 0`
 
 ## Rule Details
 
 - **Type**: Problem (catches bugs)
 - **Fixable**: Yes (auto-fixes available)
 - **Suggestions**: Yes (multiple fix options)
-- **TypeScript**: Fully supported with enhanced detection
-- **Performance**: Optimized with file skipping for build directories
+- **TypeScript**: Compatible with TypeScript projects
+- **Performance**: Optimized with targeted AST visitors
 
 ## Requirements
 
 - **ESLint**: 8.0.0 or higher
 - **Node.js**: 16.0.0 or higher
-- **TypeScript** (optional): 4.0.0 or higher for enhanced detection
-- **@typescript-eslint/parser** (optional): 6.0.0 or higher for type information
+- **TypeScript** (optional): 4.0.0 or higher
+- **@typescript-eslint/parser** (optional): For TypeScript projects
 
 ## License
 
